@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html ng-app="schema-builder">
+  <head>
+    <title>JSON Schema Builder</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A simple GUI tool to enable designing and building JSON schemas."
+    />
+    <meta
+      name="keywords"
+      content="JSON Schema, JSON Schema buider, JSON Schema Designer, Schema Builder, Schema Designer"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/paper/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="SchemaBuilder/jsonSchema.css" />
+    <link rel="stylesheet" href="css/t_styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Comfortaa:700"
+      rel="stylesheet"
+    />
+
+    <script
+      type="text/javascript"
+      src="https://code.jquery.com/jquery-1.12.4.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.3/base64.min.js"></script>
+    <script
+      type="text/javascript"
+      src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.1.3/ui-bootstrap-tpls.min.js"
+    ></script>
+    <script type="text/javascript" src="SchemaBuilder/jsonSchema.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+  </head>
+  <body ng-controller="schemaCtrler">
+    <div ng-controller="redirectToHomeCtrl">
+      <nav class="navbar navbar-inverse" ng-click="toHome()">
+        <div class="container-fluid">
+          <h1 class="title">Projekt KIDA - JSON Schema Editor</h1>
+        </div>
+      </nav>
+    </div>
+    <div class="container" ng-controller="saveModelCtrl">
+      <div>
+        <a
+          class="btn btn-success edit-btn"
+          type="button"
+          ng-click="open(data, childs)"
+          style="margin: 5px"
+          ><span class="glyphicon glyphicon-floppy-save"></span> Save</a
+        >
+        <a
+          class="btn btn-primary edit-btn"
+          type="button"
+          ng-click="toHome()"
+          style="margin: 5px"
+          ><span class="glyphicon glyphicon-menu-left"></span> Back</a
+        >
+      </div>
+    </div>
+    <div class="container">
+      <div class="editor-name">Generic Model</div>
+      <div json-schema data="data" definitions="def" childs="childs"></div>
+      <div id="def-editors">
+        <div ng-repeat="(k, d) in childs">
+          <div class="editor-name">Def: {{k}}</div>
+          <div json-schema data="d" definitions="def"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
