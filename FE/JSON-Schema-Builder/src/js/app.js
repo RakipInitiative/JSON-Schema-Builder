@@ -69,6 +69,49 @@ async function download(currentSchemeId, fileName) {
   }
 }
 
+async function downloadGeneratedClasses(currentSchemeId, fileName) {
+  var downloadFile = function (dataToWrite) {
+
+    var blob = new Blob([dataToWrite], { type: "application/octet-stream" });
+    var href = URL.createObjectURL(blob);
+
+    var a = Object.assign(document.createElement("a"), {
+      href,
+      style: "display:none",
+      download: `${fileName}.zip`,
+    });
+
+    document.body.appendChild(a);
+
+    a.click();
+    URL.revokeObjectURL(href);
+    a.remove();
+  };
+
+  try {
+    const response = await fetch(
+      backendUrl + "/kidaBackend/generateClasses",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/octet-stream",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: `${currentSchemeId}`,
+          language: `java`
+        }),
+      }
+    );
+    var data = response;
+    downloadFile(await data.blob());
+    return data;
+  } catch (error) {
+    console.log("Error downloading the file : ", error);
+  }
+}
+
+
 async function getAllData() {
   try {
     const response = await fetch(
@@ -210,6 +253,10 @@ async function redirectCtrler($scope, $window) {
 
   $scope.download = async function (id, fileName) {
     await download(id, fileName);
+  };
+
+  $scope.downloadGeneratedClasses = async function (id, fileName) {
+    await downloadGeneratedClasses(id, fileName);
   };
 
   $scope.changeValue = function (param) {
