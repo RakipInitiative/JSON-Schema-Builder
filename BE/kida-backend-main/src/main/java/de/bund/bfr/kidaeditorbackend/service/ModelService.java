@@ -3,8 +3,11 @@ package de.bund.bfr.kidaeditorbackend.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.bund.bfr.kidaeditorbackend.dto.SchemaMetaDataResponseDto;
+import de.bund.bfr.kidaeditorbackend.util.ZipHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.json.JSONObject;
@@ -12,10 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +39,12 @@ public class ModelService {
 
     @Value("${schema-git-remote-repository}")
     private String remoteRepoCloneUrl;
+
+    @Value("${openapi-class-generation-directory}")
+    private String openapiClassGenerationDirectory;
+
+    @Value("${openapi-jar-path}")
+    private String openapiJarPath;
 
     private final GitService gitService;
 
@@ -74,7 +80,7 @@ public class ModelService {
      *
      * @param id            id of the schema to save
      * @param updatedSchema the new updated schema
-     * @param accessToken accessToken for authentication to git (falls back to application properties if not supplied)
+     * @param accessToken   accessToken for authentication to git (falls back to application properties if not supplied)
      */
     public void saveModel(String id, String updatedSchema, String accessToken) throws IOException, GitAPIException {
         Pair<String, String> schemaFileData = findSchemaFileById(id);
@@ -91,11 +97,18 @@ public class ModelService {
     private Pair<String, String> findSchemaFileById(String id) throws IOException, GitAPIException {
         Map<String, SchemaMetaDataResponseDto> schemaMetaData = getStringSchemaMetaDataMap();
 
-        return Pair.of(schemaMetaData.get(id).getUrl(),schemaMetaData.get(id).getFileName());
+        return Pair.of(schemaMetaData.get(id).getUrl(), schemaMetaData.get(id).getFileName());
     }
 
     public InputStreamResource download(String id) throws GitAPIException, IOException {
-        // Get schema
+
+        String openApiSpec = getOpenApicSpec(id);
+
+        InputStream inputStream = new ByteArrayInputStream(openApiSpec.getBytes(StandardCharsets.UTF_8));
+        return new InputStreamResource(inputStream);
+    }
+
+    public String getOpenApicSpec(String id) throws GitAPIException, IOException {
         Pair<String, String> schemaFileData = findSchemaFileById(id);
 
         String folderName = gitService.pullOrCloneRepository(schemaFileData.getLeft());
@@ -103,16 +116,85 @@ public class ModelService {
 
         JSONObject schema = new JSONObject(Files.readString(Path.of(schemaFile.getAbsolutePath())));
 
-        String openApiSpec = openApiService.getOpenApiSpecFromJson(schema);
+        return openApiService.getOpenApiSpecFromJson(schema);
+    }
 
-        InputStream inputStream = new ByteArrayInputStream(openApiSpec.getBytes(StandardCharsets.UTF_8));
-        return new InputStreamResource(inputStream);
+    public Pair<String, InputStreamResource> generateClasses(String id, String language) throws GitAPIException, IOException {
+        String openApiSpec = this.getOpenApicSpec(id);
+        File generationFolder = new File(openapiClassGenerationDirectory);
+        if (!generationFolder.exists()) {
+            generationFolder.mkdir();
+        }
+
+        Path specPath = Path.of(generationFolder.getPath() + "/openApiSpec.json");
+        Files.writeString(specPath, openApiSpec);
+
+        File generatedClassesFolder = new File(generationFolder.getPath() + "/generatedModelClasses");
+
+        // set output language to java as default
+        if (language == null) {
+            language = "java";
+        }
+
+        generateClasses(specPath, generatedClassesFolder, language);
+        File zipFile = ZipHelper.zipDirectory(generatedClassesFolder);
+        cleanupGeneratedFiles(new File(specPath.toString()), generatedClassesFolder);
+        return Pair.of(zipFile.getName(), new InputStreamResource(new FileInputStream(zipFile)));
+    }
+
+    private void generateClasses(Path specPath, File generatedClassesFolder, String language) throws IOException {
+
+        log.info("OpenApiGenerator-Jar exists?: " + new File(openapiJarPath).exists());
+        log.info("OpenApi-Spec file exists?: " + new File(specPath.toString()).exists());
+
+        if (!generatedClassesFolder.exists()) {
+            generatedClassesFolder.mkdir();
+        }
+
+        // If on Windows specPath and generatedFolder path need to be wrapped in quotes if the path
+        // contains a space.
+        // On linux (AWS) the quotes break the path.
+        String command = "generate -i " + specPath.toAbsolutePath()
+                + " -g " + language
+                + " -o " + generatedClassesFolder.getAbsolutePath()
+                + " --additional-properties=modelPackage=de.bund.bfr.metadata.swagger --skip-validate-spec";
+
+        String executedCommand = "java -jar " + openapiJarPath + StringUtils.SPACE + command;
+
+        Process proc = null;
+        try {
+            proc = Runtime.getRuntime().exec(executedCommand);
+
+            // Wait for generation to finish
+            while (proc.isAlive()) {
+                String inputLine = null;
+                if (proc.getInputStream().available() > 0) {
+                    inputLine = proc.inputReader().readLine();
+                    log.info(inputLine);
+                }
+                if (proc.getErrorStream().available() > 0) {
+                    String errorLine = proc.errorReader().readLine();
+                    log.error(errorLine);
+                }
+            }
+            log.info("Class Generation finished");
+        } finally {
+            if (proc != null && proc.isAlive()) {
+                proc.destroy();
+            }
+        }
+    }
+
+    private void cleanupGeneratedFiles(File specFile, File classesDirectory) throws IOException {
+        specFile.delete();
+        FileUtils.deleteDirectory(classesDirectory);
     }
 
     private Map<String, SchemaMetaDataResponseDto> getStringSchemaMetaDataMap() throws IOException, GitAPIException {
         String repoFolder = gitService.pullOrCloneRepository(remoteRepoCloneUrl);
         return getStringSchemaMetaDataMap(repoFolder);
     }
+
     private Map<String, SchemaMetaDataResponseDto> getStringSchemaMetaDataMap(String repoFolder) throws IOException, GitAPIException {
         File lookupFile = getLookupFile(repoFolder);
         return new ObjectMapper().readValue(lookupFile, new TypeReference<>() {
@@ -155,7 +237,7 @@ public class ModelService {
         String repoFolder = gitService.pullOrCloneRepository(remoteRepoCloneUrl);
         Map<String, SchemaMetaDataResponseDto> oldModels = getStringSchemaMetaDataMap(repoFolder);
         // Add new json schemas
-        oldModels.put(id,newModel);
+        oldModels.put(id, newModel);
 
         // Write back metadata file
         ObjectMapper objectMapper = new ObjectMapper();
