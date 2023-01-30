@@ -1,21 +1,19 @@
 package de.bund.bfr.kidaeditorbackend.controller;
 
-import de.bund.bfr.kidaeditorbackend.dto.AddSchemaDto;
-import de.bund.bfr.kidaeditorbackend.dto.SchemaIdDto;
-import de.bund.bfr.kidaeditorbackend.dto.SchemaMetaDataResponseDto;
-import de.bund.bfr.kidaeditorbackend.dto.SchemaUpdateDto;
+import de.bund.bfr.kidaeditorbackend.dto.*;
 import de.bund.bfr.kidaeditorbackend.service.ModelService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 
 @RestController
@@ -118,5 +116,17 @@ public class EditorController {
             return ResponseEntity.internalServerError()
                     .build();
         }
+    }
+
+    @PostMapping(value = "/generateClasses", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<InputStreamResource> generateClasses(@RequestBody ClassGenerationDto generationDto) throws Exception {
+        Pair<String, InputStreamResource> generatedClasses =
+                modelService.generateClasses(generationDto.getId(), generationDto.getLanguage());
+
+        return ResponseEntity
+                .ok()
+                .lastModified(Instant.now())
+                .header("Content-Disposition", "attachment; filename=" + generatedClasses.getLeft())
+                .body(generatedClasses.getRight());
     }
 }
