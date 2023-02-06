@@ -1,0 +1,47 @@
+<div class="modal-header" ng-controller="redirectCtrler">
+  <h4>Add New MetaModel</h4>
+</div>
+<div class="modal-body">
+  <form>
+    <div class="form-group">
+      <label for="name">Model name</label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Enter name for model"
+        ng-model="data.name"
+      />
+    </div>
+    <div class="form-group">
+      <label for="filename">File name</label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Enter file name for model"
+        ng-model="data.fileName"
+      />
+    </div>
+    <div class="form-group">
+      <label for="url">URL</label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Enter URL for model"
+        ng-model="data.url"
+      />
+    </div>
+    <div class="form-group">
+      <label for="accessToken">Access Token</label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Enter Access token"
+        ng-model="data.accessToken"
+      />
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-primary" ng-click="getData(data)">OK</button>
+  <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

@@ -13,7 +13,9 @@ myApp.controller("redirectToHomeCtrl", redirectToHomeCtrl);
 
 schemaCtrler.$inject = ["$scope", "JsonSchema"];
 
-const backendUrl = "http://ec2-3-122-241-128.eu-central-1.compute.amazonaws.com:8080";
+//const backendUrl = "http://ec2-3-122-241-128.eu-central-1.compute.amazonaws.com:8080";
+//const backendUrl = "http://localhost:8080/kida-editor-backend";
+const backendUrl = "http://localhost:8080";
 
 function getCurrentSchemeId() {
   var queryString = window.location.search;

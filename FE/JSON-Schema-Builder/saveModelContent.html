@@ -1,0 +1,20 @@
+<div class="modal-header" ng-controller="schemaCtrler">
+  <h4>Add Token Details</h4>
+</div>
+<div class="modal-body">
+  <form>
+    <div class="form-group">
+      <label for="filename">Access Token</label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Enter access token"
+        ng-model="data1.accessToken"
+      />
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-primary" ng-click="saveModel(data1)">OK</button>
+  <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

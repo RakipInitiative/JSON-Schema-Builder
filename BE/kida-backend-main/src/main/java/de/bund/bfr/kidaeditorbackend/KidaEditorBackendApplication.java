@@ -8,16 +8,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
-public class KidaEditorBackendApplication {
+public class KidaEditorBackendApplication extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {
 		SpringApplication.run(KidaEditorBackendApplication.class, args);
 	}
-
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(KidaEditorBackendApplication.class);
+	}
 	@Bean
 	public OpenAPI openApiDef(
 			@Value("${app.version:}") String appVersion, @Value("${server.servlet.context-path:}") String contextPath) {

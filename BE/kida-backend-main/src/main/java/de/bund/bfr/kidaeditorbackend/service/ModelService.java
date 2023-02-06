@@ -169,11 +169,13 @@ public class ModelService {
             while (proc.isAlive()) {
                 String inputLine = null;
                 if (proc.getInputStream().available() > 0) {
-                    inputLine = proc.inputReader().readLine();
+                    BufferedReader output = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                    inputLine = output.readLine();//proc.inputReader().readLine();
                     log.info(inputLine);
                 }
                 if (proc.getErrorStream().available() > 0) {
-                    String errorLine = proc.errorReader().readLine();
+                    BufferedReader output = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+                    String errorLine = output.readLine();
                     log.error(errorLine);
                 }
             }
