@@ -157,7 +157,7 @@ public class ModelService {
         String command = "generate -i " + specPath.toAbsolutePath()
                 + " -g " + language
                 + " -o " + generatedClassesFolder.getAbsolutePath()
-                + " --additional-properties=modelPackage=de.bund.bfr.metadata.swagger --skip-validate-spec";
+                + " --additional-properties=modelPackage=de.bund.bfr.metadata.swagger,library=google-api-client --skip-validate-spec";
 
         String executedCommand = "java -jar " + openapiJarPath + StringUtils.SPACE + command;
 
