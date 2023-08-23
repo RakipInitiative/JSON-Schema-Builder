@@ -155,9 +155,9 @@ public class ModelService {
         // contains a space.
         // On linux (AWS) the quotes break the path.
         String command = "generate -i " + specPath.toAbsolutePath()
-                + " -g " + language
+                + " -l " + language
                 + " -o " + generatedClassesFolder.getAbsolutePath()
-                + " --additional-properties=modelPackage=de.bund.bfr.metadata.swagger,library=google-api-client --skip-validate-spec";
+                + " --model-package de.bund.bfr.metadata.swagger --use-oas2";
 
         String executedCommand = "java -jar " + openapiJarPath + StringUtils.SPACE + command;
 
