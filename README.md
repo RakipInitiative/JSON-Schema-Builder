@@ -1,6 +1,7 @@
 # JSON Schema Builder
 
 This service allows you to build JSON schemas using the JSON Schema Builder tool.
+
 Access Web-App here: https://jsb.starlingcloud.dev/index.html
 
 ## Prerequisites
